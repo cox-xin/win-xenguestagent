@@ -153,7 +153,7 @@ def copyfiles(name, subproj, debug=False):
 if __name__ == '__main__':
     os.environ['MAJOR_VERSION'] = '7'
     os.environ['MINOR_VERSION'] = '0'
-    os.environ['MICRO_VERSION'] = '1'
+    os.environ['MICRO_VERSION'] = '2'
     if 'BUILD_NUMBER' not in os.environ.keys():
         os.environ['BUILD_NUMBER'] = '0'
 
