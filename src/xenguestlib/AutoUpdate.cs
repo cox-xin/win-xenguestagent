@@ -56,15 +56,15 @@ namespace xenwinsvc
             if (!FeatureLicensed.IsLicensed())
                 return;
 
-            ProcessStartInfo startInfo = new ProcessStartInfo();
-            startInfo.FileName = "ManagementAgentUpdater.exe";
-            startInfo.CreateNoWindow = true;
-            startInfo.UseShellExecute = false;
-            startInfo.RedirectStandardError = true;
-            startInfo.RedirectStandardOutput = true;
+            //ProcessStartInfo startInfo = new ProcessStartInfo();
+            //startInfo.FileName = "ManagementAgentUpdater.exe";
+            //startInfo.CreateNoWindow = true;
+            //startInfo.UseShellExecute = false;
+            //startInfo.RedirectStandardError = true;
+            //startInfo.RedirectStandardOutput = true;
 
-            isUpdating = true;
-            Process newprocess = Process.Start(startInfo);
+            //isUpdating = true;
+            //Process newprocess = Process.Start(startInfo);
         }
 
         static volatile bool isUpdating = false;
