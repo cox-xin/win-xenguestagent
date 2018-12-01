@@ -1,0 +1,9 @@
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestlib\bin\Release\xenguestlib.dll
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestlib\bin\Release\xenguestlib.pdb
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestlib\bin\Release\BrandSupport.dll
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestlib\bin\Release\Interop.NetFwTypeLib.dll
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestlib\obj\Release\xenguestlib.csprojResolveAssemblyReference.cache
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestlib\obj\Release\Interop.NetFwTypeLib.dll
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestlib\obj\Release\xenguestlib.csproj.ResolveComReference.cache
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestlib\obj\Release\xenguestlib.dll
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestlib\obj\Release\xenguestlib.pdb

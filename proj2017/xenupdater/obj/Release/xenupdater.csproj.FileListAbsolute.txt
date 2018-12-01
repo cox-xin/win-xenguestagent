@@ -1,0 +1,8 @@
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenupdater\bin\Release\ManagementAgentUpdater.exe
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenupdater\bin\Release\ManagementAgentUpdater.pdb
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenupdater\bin\Release\BrandSupport.dll
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenupdater\bin\Release\Interop.TaskScheduler.dll
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenupdater\obj\Release\Interop.TaskScheduler.dll
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenupdater\obj\Release\xenupdater.csproj.ResolveComReference.cache
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenupdater\obj\Release\ManagementAgentUpdater.exe
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenupdater\obj\Release\ManagementAgentUpdater.pdb

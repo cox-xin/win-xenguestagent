@@ -1,0 +1,11 @@
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xendpriv\bin\Release\xendpriv.exe
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xendpriv\bin\Release\xendpriv.pdb
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xendpriv\bin\Release\xenguestlib.dll
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xendpriv\bin\Release\BrandSupport.dll
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xendpriv\bin\Release\Interop.NetFwTypeLib.dll
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xendpriv\bin\Release\xenguestlib.pdb
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xendpriv\obj\Release\xendpriv.csprojResolveAssemblyReference.cache
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xendpriv\obj\Release\xendpriv.DummyForm.resources
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xendpriv\obj\Release\xendpriv.csproj.GenerateResource.Cache
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xendpriv\obj\Release\xendpriv.exe
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xendpriv\obj\Release\xendpriv.pdb

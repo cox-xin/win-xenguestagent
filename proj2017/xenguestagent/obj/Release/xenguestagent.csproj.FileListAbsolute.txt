@@ -1,0 +1,9 @@
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestagent\bin\Release\xenguestagent.exe
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestagent\bin\Release\xenguestagent.pdb
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestagent\bin\Release\BrandSupport.dll
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestagent\bin\Release\xenguestlib.dll
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestagent\bin\Release\Interop.NetFwTypeLib.dll
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestagent\bin\Release\xenguestlib.pdb
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestagent\obj\Release\xenguestagent.csprojResolveAssemblyReference.cache
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestagent\obj\Release\xenguestagent.exe
+C:\Users\alex\Documents\Entwicklung\xcp-ng_win-pv-tools\win-xenguestagent\proj\xenguestagent\obj\Release\xenguestagent.pdb
