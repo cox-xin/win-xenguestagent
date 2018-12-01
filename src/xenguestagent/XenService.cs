@@ -40,13 +40,13 @@ using System.Configuration.Install;
 using System.Reflection;
 using XenGuestLib;
 
-[assembly:AssemblyVersion(XenVersions.Version)]
-[assembly:AssemblyFileVersion(XenVersions.Version)]
-[assembly:AssemblyCompanyAttribute(XenVersions.BRANDING_manufacturerLong)]
-[assembly:AssemblyProductAttribute(XenVersions.BRANDING_toolsForVMs)]
-[assembly:AssemblyDescriptionAttribute(XenVersions.BRANDING_guestAgentLong)]
-[assembly:AssemblyTitleAttribute(XenVersions.BRANDING_guestAgentLong)]
-[assembly:AssemblyCopyrightAttribute(XenVersions.BRANDING_copyrightGuestAgent)]
+[assembly: AssemblyVersion(XenVersions.Version)]
+[assembly: AssemblyFileVersion(XenVersions.Version)]
+[assembly: AssemblyCompanyAttribute(XenVersions.BRANDING_manufacturerLong)]
+[assembly: AssemblyProductAttribute(XenVersions.BRANDING_toolsForVMs)]
+[assembly: AssemblyDescriptionAttribute(XenVersions.BRANDING_guestAgentLong)]
+[assembly: AssemblyTitleAttribute(XenVersions.BRANDING_guestAgentLong)]
+[assembly: AssemblyCopyrightAttribute(XenVersions.BRANDING_copyrightGuestAgent)]
 
 
 namespace xenwinsvc
@@ -70,44 +70,39 @@ namespace xenwinsvc
 
         public override void WriteLine(object o)
         {
-            base.WriteLine(DateTime.Now.ToString() +" : " + o.ToString());
+            base.WriteLine(DateTime.Now.ToString() + " : " + o.ToString());
         }
         public override void WriteLine(string message)
         {
-            base.WriteLine(DateTime.Now.ToString() +" : " + message);
+            base.WriteLine(DateTime.Now.ToString() + " : " + message);
         }
     }
-        
-       /* protected override void OnStart(string[] args)
-        {
-            // Start thread - so we can do everything in the background
-            TextWriterTraceListener tlog = new TimeDateTraceListener(Application.CommonAppDataPath + "\\GuestData.log", "GuestData");
-            Trace.Listeners.Add(tlog);
-            Trace.AutoFlush = true;
-            Trace.WriteLine("OnStart");  
-            InstallState = new InstallerState();
-            installthread = new Thread(InstallThreadHandler);
-            installthread.Start();
-            
-        }*/
 
-    class XenService : System.ServiceProcess.ServiceBase, IExceptionHandler
+    /* protected override void OnStart(string[] args)
+     {
+         // Start thread - so we can do everything in the background
+         TextWriterTraceListener tlog = new TimeDateTraceListener(Application.CommonAppDataPath + "\\GuestData.log", "GuestData");
+         Trace.Listeners.Add(tlog);
+         Trace.AutoFlush = true;
+         Trace.WriteLine("OnStart");  
+         InstallState = new InstallerState();
+         installthread = new Thread(InstallThreadHandler);
+         installthread.Start();
+
+     }*/
+
+    public class XenService : System.ServiceProcess.ServiceBase, IExceptionHandler
     {
 
         TimeDateTraceListener tlog;
         public XenService()
         {
-     
+
             Debug.Print("GuestAgent Init");
-            try
-            {
-                tlog = new TimeDateTraceListener("guest");
-                Trace.Listeners.Add(tlog); Trace.WriteLine("This is all");
-            }
-            catch (Exception e)
-            {
-                EventLog.WriteEntry("Failed to create management agent debug log : " + e.ToString());
-            }
+
+            tlog = new TimeDateTraceListener("guest");
+            Trace.Listeners.Add(tlog); Trace.WriteLine("This is all");
+
             this.ServiceName = Branding.Instance.getString("BRANDING_guestAgent");
             this.CanStop = true;
             this.CanHandleSessionChangeEvent = true;
@@ -136,6 +131,7 @@ namespace xenwinsvc
                 return false;
             }
         }
+
         void resetTimeToRefresh()
         {
             cntr = 1;
@@ -143,80 +139,72 @@ namespace xenwinsvc
 
         void handleUnsuspended(object nothing, EventArrivedEventArgs args)
         {
-            try
-            {
-                Refresher.RefreshAll(true);
-            }
-            catch (Exception e)
-            {
-                HandleException("Resume from suspend", e);
-            }
-        }        
+
+            Refresher.RefreshAll(true);
+
+        }
 
         void ServiceThreadHandler()
         {
-            try {
-                Debug.Print("ServiceThreadHandler");
-                needsShutdown.Reset();
 
-                VifInfo.StoreChangedNetworkSettings();
+            Debug.Print("ServiceThreadHandler");
+            needsShutdown.Reset();
 
-                WmiBase.Reset();
-                Debug.Print("WMI Check");
-                if (WmiBase.Check())
+            VifInfo.StoreChangedNetworkSettings();
+
+            WmiBase.Reset();
+            Debug.Print("WMI Check");
+            if (WmiBase.Check())
+            {
+                starting = true;
+                WmiCapableServiceThreadHandler();
+                starting = false;
+                running = true;
+            }
+            else
+            {
+                running = false;
+                WaitHandle[] waitHandles = new WaitHandle[]
                 {
+                         (new WmiIncapableThread()).Incapable,
+                         needsShutdown
+                };
+
+                Debug.Print("Waiting for WMI capability to begin");
+
+                EventLog.WriteEntry(Branding.Instance.getString("BRANDING_errNoWMI"));
+
+
+                int activehandle = WaitHandle.WaitAny(waitHandles);
+                Debug.Print("Received event");
+
+                if (activehandle == 0)
+                {
+
+                    EventLog.WriteEntry(Branding.Instance.getString("BRANDING_errNoWMI"));
+
                     starting = true;
                     WmiCapableServiceThreadHandler();
                     starting = false;
                     running = true;
                 }
-                else
-                {
-                    running = false;
-                    WaitHandle[] waitHandles = new WaitHandle[] 
-                    {
-                         (new WmiIncapableThread()).Incapable,
-                         needsShutdown
-                    };
-                   
-                    Debug.Print("Waiting for WMI capability to begin");
-                    try
-                    {
-                        EventLog.WriteEntry(Branding.Instance.getString("BRANDING_errNoWMI"));
-                    }
-                    catch { };
+            }
 
-                    int activehandle =WaitHandle.WaitAny(waitHandles);
-                    Debug.Print("Received event");
-       
-                    if (activehandle == 0 ) {
-                        try
-                        {
-                            EventLog.WriteEntry(Branding.Instance.getString("BRANDING_errNoWMI"));
-                        }
-                        catch { };
-                        starting = true;
-                        WmiCapableServiceThreadHandler();
-                        starting = false;
-                        running = true;
-                    }
-                }
-            }
-            catch (Exception e) {
-                HandleException("Main Service Thread", e);
-            }
         }
 
-        class WmiIncapableThread {
+        class WmiIncapableThread
+        {
             System.Threading.Timer timer;
-            public WmiIncapableThread() {
+            public WmiIncapableThread()
+            {
                 Incapable = new ManualResetEvent(false);
                 timer = new System.Threading.Timer(WmiIncapableServiceThreadHandler, null, 4500, 4500);
             }
-            public ManualResetEvent Incapable; 
+            public ManualResetEvent Incapable;
             void WmiIncapableServiceThreadHandler(object nothing)
             {
-                try {
+                try
+                {
                     WmiBase.Reset();
                     if (WmiBase.Check())
                     {
@@ -224,9 +212,10 @@ namespace xenwinsvc
                         Incapable.Set();
                     }
                 }
-                catch {
-                     timer.Dispose();
-                     Incapable.Set();
+                catch
+                {
+                    timer.Dispose();
+                    Incapable.Set();
                 }
             }
 
@@ -234,92 +223,76 @@ namespace xenwinsvc
 
         void RunProcess(string name, string arg, string comment)
         {
-            try
-            {
-
-                Process myProcess = new Process();
-                myProcess.StartInfo.UseShellExecute = false;
-                myProcess.StartInfo.FileName = name;
-                myProcess.StartInfo.Arguments = arg;
-                myProcess.StartInfo.CreateNoWindow = true;
-                myProcess.Start();
-                myProcess.WaitForExit(5000);
-            }
-            catch (Exception e)
-            {
-                wmisession.Log("Process: unable to "+comment+"\n" + e.ToString());
-            }
+            Process myProcess = new Process();
+            myProcess.StartInfo.UseShellExecute = false;
+            myProcess.StartInfo.FileName = name;
+            myProcess.StartInfo.Arguments = arg;
+            myProcess.StartInfo.CreateNoWindow = true;
+            myProcess.Start();
+            myProcess.WaitForExit(5000);
         }
 
-        void WmiCapableServiceThreadHandler() 
+        void WmiCapableServiceThreadHandler()
         {
-            try
+            wmisession = WmiBase.Singleton.GetXenStoreSession("Features");
+
+            wmisession.Log("Guest Agent Starting");
+            Refresher.Add(new PVInstallation(this));
+
+            wmisession.Log("About to run apps");
+
+            RunProcess("wmiadap", "/f", "refresh WMI ADAP");
+            RunProcess("diskperf", "-y", "enable disk perf counters");
+
+
+            wmisession.Log("About to run features");
+            new FeatureLicensed(this);
+            new FeatureVSSLicensed(this);
+            new FeatureDumpLog(this);
+            new FeatureGC(this);
+            new FeaturePing(this);
+            new FeatureDomainJoin(this);
+            new FeatureSetComputerName(this);
+            new FeatureXSBatchCommand(this);
+            new FeatureAutoUpdate(this);
+
+            wmisession.Log("About to try snapshot");
+            if (FeatureSnapshot.IsSnapshotSupported())
             {
-                wmisession = WmiBase.Singleton.GetXenStoreSession("Features");
-
-                wmisession.Log("Guest Agent Starting");
-                Refresher.Add(new PVInstallation(this));
-               
-                wmisession.Log("About to run apps");
-
-                RunProcess("wmiadap","/f","refresh WMI ADAP");
-                RunProcess("diskperf", "-y","enable disk perf counters");
-
-                
-                wmisession.Log("About to run features");
-                new FeatureLicensed(this);
-                new FeatureVSSLicensed(this);
-                new FeatureDumpLog(this);
-                new FeatureGC(this);
-                new FeaturePing(this);
-                new FeatureDomainJoin(this);
-                new FeatureSetComputerName(this);
-                new FeatureXSBatchCommand(this);
-                new FeatureAutoUpdate(this);
-
-                wmisession.Log("About to try snapshot");
-                if (FeatureSnapshot.IsSnapshotSupported())
-                {
-                    Refresher.Add(new FeatureSnapshot(this));
-                }
-                else
-                {
-                    wmisession.Log("Snapshot not supported on this platform");
-                    FeatureSnapshot.removeSnapshot(wmisession);
-                }
-                new FeatureTerminalServicesReset(this);
-                new FeatureTerminalServices(this);
-                new VifFeatureStaticIpSetting(this);
-                new VfFeatureStaticIpSetting(this);
-                wmisession.Log("About to add refreshers");
-
-                VifInfo vifRefresher = new VifInfo(this);
-                Refresher.Add(vifRefresher);
-                Disposer.Add(vifRefresher);
-
-                VfInfo vfRefresher = new VfInfo(this);
-                Refresher.Add(vfRefresher);
-                Disposer.Add(vfRefresher);
-
-                Refresher.Add(new VolumeInfo());
-                Refresher.Add(new MemoryInfo());
-                Refresher.Add(new XenAppSessionInfo());
-
-                wmisession.Log("About to add handlers ");
-                clipboardhandler = new ClipboardManager(this);
-                Disposer.Add(clipboardhandler);
-                clipboardhandler.Run();
-                Disposer.Add(WmiBase.Singleton.ListenForEvent("XCPngXenStoreUnsuspendedEvent", new EventArrivedEventHandler(handleUnsuspended)));
-
-                Refresher.RefreshAll(true);
-                wmisession.Log("running ");
-                Refresher.Run(this);
-
+                Refresher.Add(new FeatureSnapshot(this));
             }
-            catch (Exception e)
+            else
             {
-                HandleException("Service handler", e);
+                wmisession.Log("Snapshot not supported on this platform");
+                FeatureSnapshot.removeSnapshot(wmisession);
             }
+            new FeatureTerminalServicesReset(this);
+            new FeatureTerminalServices(this);
+            new VifFeatureStaticIpSetting(this);
+            new VfFeatureStaticIpSetting(this);
+            wmisession.Log("About to add refreshers");
+
+            VifInfo vifRefresher = new VifInfo(this);
+            Refresher.Add(vifRefresher);
+            Disposer.Add(vifRefresher);
+
+            VfInfo vfRefresher = new VfInfo(this);
+            Refresher.Add(vfRefresher);
+            Disposer.Add(vfRefresher);
+
+            Refresher.Add(new VolumeInfo());
+            Refresher.Add(new MemoryInfo());
+            Refresher.Add(new XenAppSessionInfo());
+
+            wmisession.Log("About to add handlers ");
+            clipboardhandler = new ClipboardManager(this);
+            Disposer.Add(clipboardhandler);
+            clipboardhandler.Run();
+            Disposer.Add(WmiBase.Singleton.ListenForEvent("XCPngXenStoreUnsuspendedEvent", new EventArrivedEventHandler(handleUnsuspended)));
+
+            Refresher.RefreshAll(true);
+            wmisession.Log("running ");
+            Refresher.Run(this);
         }
 
         bool running;
@@ -328,27 +301,18 @@ namespace xenwinsvc
 
         void ServiceThreadShutdown()
         {
-            try {
-                try {
-                    Refresher.Dispose();
-                    Disposer.Dispose();
-                }
-                catch (Exception ex) {
-                    wmisession.Log("Errors disposing of threads: "+ex.ToString());
-                    throw;
-                }
-    
+
+
+                Refresher.Dispose();
+                Disposer.Dispose();
+
+
                 wmisession.Log("Guest Agent Stopped");
-                try
-                {
-                    wmisession.Dispose();
-                }
-                catch { }
-            }
-            catch {}
-            finally {
+
+                wmisession.Dispose();
+
                 WmiBase.Reset();
-            }
+            
         }
 
         private Boolean resetting = false;
@@ -357,46 +321,42 @@ namespace xenwinsvc
             Debug.Print("Reset requested");
             if (!resetting)
             {
-                try
-                {
-                    Debug.Print("I need to be reset");
-                    lock (servicestatelock)
-                    {
-                        resetting = true;
-                        Debug.Print("Got lock");
-                        
-                        if (starting || running)
-                        {
 
-                            Debug.Print("Running, should shutdown");
-                            ServiceThreadShutdown();
-                            starting = false;
-                            running = false;
-                            Debug.Print("shutdown done");
-                        }
-                        if (ServiceThread != null)
-                        {
-                            needsShutdown.Set();
-                            //If we have got here from an exception raised in the ServiceThread, then the 
-                            //service thread is already over, so no need to join
-                            if (!ServiceThread.Equals(Thread.CurrentThread)) {
-                                ServiceThread.Join();
-                            }
-                            ServiceThread = null;
-                        }
-                        
-                        Debug.Print("Starting new thread");
-                        resetting = false;
-                        ServiceThread = new Thread(ServiceThreadHandler, 256*1024 );
-                        ServiceThread.Start();
-                        Debug.Print("Running");
-                    }
-                }
-                catch (Exception e)
+                Debug.Print("I need to be reset");
+                lock (servicestatelock)
                 {
-                    Debug.Print("OnNeedsReset :" + e.ToString());
-                    EventLog.WriteEntry("Reset Failed: "+e.ToString() );
+                    resetting = true;
+                    Debug.Print("Got lock");
+
+                    if (starting || running)
+                    {
+
+                        Debug.Print("Running, should shutdown");
+                        ServiceThreadShutdown();
+                        starting = false;
+                        running = false;
+                        Debug.Print("shutdown done");
+                    }
+                    if (ServiceThread != null)
+                    {
+                        needsShutdown.Set();
+                        //If we have got here from an exception raised in the ServiceThread, then the 
+                        //service thread is already over, so no need to join
+                        if (!ServiceThread.Equals(Thread.CurrentThread))
+                        {
+                            ServiceThread.Join();
+                        }
+                        ServiceThread = null;
+                    }
+
+                    Debug.Print("Starting new thread");
+                    resetting = false;
+                    ServiceThread = new Thread(ServiceThreadHandler, 256 * 1024);
+                    ServiceThread.Start();
+                    Debug.Print("Running");
                 }
+
+
             }
         }
 
@@ -404,32 +364,23 @@ namespace xenwinsvc
         public void HandleException(string from, Exception e)
         {
 
-            try
+
+            if (e is ManagementException)
             {
-                if (e is ManagementException)
+                if (WmiBase.HandleManagementException(e as ManagementException))
                 {
-                    if (WmiBase.HandleManagementException(e as ManagementException))
-                    {
-                        Debug.Print("WMI objects cannot be located.  Resetting service");
-                        OnNeedsReset();
-                        return;
-                    }
+                    Debug.Print("WMI objects cannot be located.  Resetting service");
+                    OnNeedsReset();
+                    return;
                 }
-                wmisession.Log("Unhandled exception from "+from+".  Resetting service:\n" + e.ToString());
-                wmisession.Log("Dumping stored debug messages");
-                WmiBase.Singleton.DumpDebugMsg();
             }
-            catch { 
-            
-            }
-            try
-            {
-                OnNeedsReset();
-            }
-            catch
-            {
-                Debug.Print("Reset failed");
-            }
+            wmisession.Log("Unhandled exception from " + from + ".  Resetting service:\n" + e.ToString());
+            wmisession.Log("Dumping stored debug messages");
+            WmiBase.Singleton.DumpDebugMsg();
+
+
+            OnNeedsReset();
+
         }
 
         protected override bool OnPowerEvent(System.ServiceProcess.PowerBroadcastStatus powerStatus)
@@ -454,46 +405,34 @@ namespace xenwinsvc
         ClipboardManager clipboardhandler;
         protected override void OnSessionChange(System.ServiceProcess.SessionChangeDescription changeDescription)
         {
-            try {
-                WmiBase.Singleton.DebugMsg("Session Change");
-                lock (servicestatelock) { 
-                    if (running)
-                    {
-                        clipboardhandler.HandleSessionChange(changeDescription.Reason, (uint)changeDescription.SessionId);
-                    }
+
+            WmiBase.Singleton.DebugMsg("Session Change");
+            lock (servicestatelock)
+            {
+                if (running)
+                {
+                    clipboardhandler.HandleSessionChange(changeDescription.Reason, (uint)changeDescription.SessionId);
                 }
-                base.OnSessionChange(changeDescription);
             }
-            catch (Exception e) {
-                HandleException("Session Change Handler", e);
-            }
+            base.OnSessionChange(changeDescription);
+
         }
         protected override void OnStart(string[] args)
         {
-            try {
-                Debug.Print("Starting");
-                try {
-                    EventLog.WriteEntry("Service starting");
-                }
-                catch {
-                    Debug.Print("Writing to the event log is failing");
-                }
-                needsShutdown = new ManualResetEvent(false);
-                base.OnStart(args);
-                hiddenform = new HiddenForm();
-                new Thread(RunMessagePump, 1024*256).Start();
-                hiddenform.started.WaitOne();
-                starting = false;
-                running = false;
-                OnNeedsReset();
-            }
-            catch (Exception e) {
-                Debug.Print("Exception :" + e.ToString());
-                try {
-                    EventLog.WriteEntry("Exception :"+e.ToString());
-                }
-                catch{}
-            }
+
+            Debug.Print("Starting");
+
+            EventLog.WriteEntry("Service starting");
+
+            needsShutdown = new ManualResetEvent(false);
+            base.OnStart(args);
+            hiddenform = new HiddenForm();
+            new Thread(RunMessagePump, 1024 * 256).Start();
+            hiddenform.started.WaitOne();
+            starting = false;
+            running = false;
+            OnNeedsReset();
+
 
         }
 
@@ -503,49 +442,39 @@ namespace xenwinsvc
             Debug.Print("Stopping");
             lock (servicestatelock)
             {
-                try
-                {
-                    EventLog.WriteEntry("Service stopping have lock");
-                }
-                catch { }
+
+                EventLog.WriteEntry("Service stopping have lock");
+
                 Debug.Print("Stopping, have lock");
                 resetting = true;
                 if (starting || running)
                 {
-                    try
-                    {
-                        EventLog.WriteEntry("Service stopping shutting down");
-                    }
-                    catch { }
+
+                    EventLog.WriteEntry("Service stopping shutting down");
+
                     Debug.Print("Shutting down");
                     ServiceThreadShutdown();
                     starting = false;
                     running = false;
                 }
-                try
-                {
-                    EventLog.WriteEntry("Service stopping nothing running");
-                }
-                catch { }
+
+                EventLog.WriteEntry("Service stopping nothing running");
+
                 Debug.Print("Nothing running");
                 if (ServiceThread != null)
                 {
-                    try
-                    {
-                        EventLog.WriteEntry("Service stopping joining service thread");
-                    }
-                    catch { }
+
+                    EventLog.WriteEntry("Service stopping joining service thread");
+
                     Debug.Print("Joining servicethread");
                     needsShutdown.Set();
                     ServiceThread.Join();
                     ServiceThread = null;
                 }
             }
-            try
-            {
-                EventLog.WriteEntry("Service stopping done");
-            }
-            catch { }
+
+            EventLog.WriteEntry("Service stopping done");
+
             Debug.Print("Stopping essentially done");
             hiddenform.Dispose();
             Application.Exit();
@@ -579,20 +508,15 @@ namespace xenwinsvc
                 }
                 catch
                 {
-                    try
-                    {
                         asminstall.Rollback(state);
-                    }
-                    catch { }
-                }
+
+               }
             }
         }
 
         public static int Main(string[] args)
         {
-            bool rethrow = false;
-            try
-            {
+
                 bool install = false;
                 bool uninstall = false;
 
@@ -624,33 +548,19 @@ namespace xenwinsvc
                 if (!(uninstall || install))
                 {
                     Debug.Print("Service Main");
-                    rethrow = true;
+
                     System.ServiceProcess.ServiceBase.Run(new XenService());
-                    rethrow = false;
+
                     Debug.Print("Service Main Done");
                 }
                 return 0;
-            }
-            catch (Exception e)
-            {
-                if (rethrow) throw;
-                Console.Error.WriteLine(e.ToString());
-                return -1;
-            }
-            
-            
         }
         HiddenForm hiddenform;
         void RunMessagePump()
         {
-            try
-            {
+
                 Application.Run(hiddenform);
-            }
-            catch (Exception e)
-            {
-                wmisession.Log("Message Handler Unhandled Exception\n" + e.ToString());
-            }
+
         }
     }
 

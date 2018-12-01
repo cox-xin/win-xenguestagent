@@ -324,6 +324,7 @@ namespace xenwinsvc
                 Debug.Print("invalid parameter for findValidNic");
                 return null;
             }
+            
             NetworkInterface[] validNics = (from nic in nics where NicUtil.macsMatch(mac, nic) select nic).ToArray<NetworkInterface>();
             if (null == validNics || 0 == validNics.Length)
             {
@@ -621,9 +622,8 @@ namespace xenwinsvc
                     PhysicalAddress pa = nic.GetPhysicalAddress();
                     string NetCfgInstanceId = nic.Id;
                     Trace.WriteLine("ID = " + NetCfgInstanceId);
-                    try
-                    {
-                        using (RegistryKey netsetstorekey = Registry.LocalMachine.CreateSubKey(NETSETTINGSSTORE))
+
+                    using (RegistryKey netsetstorekey = Registry.LocalMachine.CreateSubKey(NETSETTINGSSTORE))
                         {
                             using (RegistryKey emulatedkey = netsetstorekey.CreateSubKey(type))
                             {
@@ -640,18 +640,12 @@ namespace xenwinsvc
                                                     foreach (string busdriverdevice in busdriverkey.GetSubKeyNames())
                                                         using (RegistryKey busdriverdevicekey = busdriverkey.OpenSubKey(busdriverdevice))
                                                         {
-                                                            try
-                                                            {
                                                                 string driver = (string)busdriverdevicekey.GetValue("Driver");
-                                                                if (driver.Equals(classname, StringComparison.InvariantCultureIgnoreCase))
+                                                                if (driver != null && driver.Equals(classname, StringComparison.InvariantCultureIgnoreCase))
                                                                 {
                                                                     Trace.WriteLine("NETINFO Record " + pa.ToString());
                                                                     emulatedkey.SetValue(GetMacStrFromPhysical(pa), bus + "\\" + busdriver + "\\" + busdriverdevice);
                                                                 }
-                                                            }
-                                                            catch
-                                                            {
-                                                            }
                                                         }
                                                 }
                                         }
@@ -682,11 +676,7 @@ namespace xenwinsvc
                                     }
                                 }*/
                             }
-                        }
-                    }
-                    catch
-                    {
-                        Trace.WriteLine("No stored settings");
+                        
                     }
                 }
             }
@@ -694,8 +684,6 @@ namespace xenwinsvc
 
         private static void ClonePVStatics(string SrcName, string DestName, string SrcNetLuidMatchStr, string DestNetLuidMatchStr, bool delete)
         {
-            try
-            {
                 using (RegistryKey staticstore = Registry.LocalMachine.OpenSubKey(SrcName, true))
                 using (RegistryKey netstatic = Registry.LocalMachine.CreateSubKey(DestName))
                 {
@@ -709,10 +697,7 @@ namespace xenwinsvc
                         }
                     }
                 }
-            }
-            catch
-            {
-            }
+
         }
 
         private static void CloneValues(RegistryKey src, RegistryKey dest)
@@ -813,15 +798,13 @@ namespace xenwinsvc
             using (RegistryKey store = Registry.LocalMachine.CreateSubKey(NETSETTINGSSTORE))
             using (RegistryKey pvstore = Registry.LocalMachine.CreateSubKey(NETSETTINGSSTORE + @"\PV"))
             {
-                try
-                {
+
                     if (((String)store.GetValue("Status")).Equals("DontUpdate"))
                     {
                         Trace.WriteLine("Do not update stored values");
                         return;
                     }
-                }
-                catch { }
+
 
                 NetworkInterface[] nics = NetworkInterface.GetAllNetworkInterfaces();
                 foreach (NetworkInterface nic in nics)
@@ -839,25 +822,15 @@ namespace xenwinsvc
                                 string DestNetCfgInstanceId;
                                 string DestNetLuidMatchStr;
                                 string SrcNetLuidMatchStr;
-                                try
-                                {
+                                
                                     SrcNetCfgInstanceId = FindNetCfgInstanceIdForDriverKey((string)pvstore.GetValue(matchmac));
                                     DestNetCfgInstanceId = FindNetCfgInstanceIdForDriverKey((string)emustore.GetValue(matchmac));
-                                }
-                                catch
-                                {
-                                    continue;
-                                }
+                               
                                 FromServiceIfaceToSeviceIface(SrcNetCfgInstanceId, DestNetCfgInstanceId);
-                                try
-                                {
+                               
                                     DestNetLuidMatchStr = FindNetLuidMatchStrForNetCfgInstanceId(DestNetCfgInstanceId);
                                     SrcNetLuidMatchStr = FindNetLuidMatchStrForNetCfgInstanceId(SrcNetCfgInstanceId);
-                                }
-                                catch
-                                {
-                                    continue;
-                                }
+                                
                                 ClonePVStatics(STATICIPV4, STATICIPV4, SrcNetLuidMatchStr, DestNetLuidMatchStr, false);
                                 ClonePVStatics(STATICIPV6, STATICIPV6, SrcNetLuidMatchStr, DestNetLuidMatchStr, false);
                             }
@@ -896,14 +869,9 @@ namespace xenwinsvc
                                         }
                                     }
                                 }
-                                try
-                                {
+                              
                                     SrcNetLuidMatchStr = FindNetLuidMatchStrForNetCfgInstanceId(SrcNetCfgInstanceId);
-                                }
-                                catch
-                                {
-                                    continue;
-                                }
+                               
                                 ClonePVStatics(STATICIPV4, STATICIPV4STORE, SrcNetLuidMatchStr, SrcNetLuidMatchStr, false);
                                 ClonePVStatics(STATICIPV6, STATICIPV6STORE, SrcNetLuidMatchStr, SrcNetLuidMatchStr, false);
                             }
@@ -922,21 +890,15 @@ namespace xenwinsvc
                 foreach (string macaddr in macstore.GetSubKeyNames())
                 {
 
-                    try
-                    {
+                   
                         using (RegistryKey ifacekey = macstore.OpenSubKey(macaddr, true))
                         {
                             if (((string)ifacekey.GetValue("ifacetype")).Equals("PV"))
                             {
                                 string NetCfgInstanceId;
-                                try
-                                {
+                                
                                     NetCfgInstanceId = FindNetCfgInstanceIdForDriverKey((string)emustore.GetValue(macaddr));
-                                }
-                                catch
-                                {
-                                    continue;
-                                }
+                                
                                 Trace.WriteLine("NETINFO Store " + macaddr);
                                 FromStoreToServiceIface(ifacekey, NetCfgInstanceId);
                                 ifacekey.SetValue("ifacetype", "Emulated", RegistryValueKind.String);
@@ -949,11 +911,7 @@ namespace xenwinsvc
                                 continue;
                             }
                         }
-                    }
-                    catch
-                    {
-                        continue;
-                    }
+                    
                 }
             }
 
@@ -979,19 +937,13 @@ namespace xenwinsvc
 
         public static void StoreChangedNetworkSettings()
         {
-            try
-            {
+            
                 ServiceController sc = null;
                 ServiceControllerStatus status = ServiceControllerStatus.Stopped;
-                try
-                {
+                
                     sc = new ServiceController("XenNet");
                     status = sc.Status;
-                }
-                catch
-                {
-                    sc = null;
-                }
+                
 
                 if ((sc != null) && (status == ServiceControllerStatus.Running))
                 {
@@ -1001,23 +953,13 @@ namespace xenwinsvc
                 else
                 {
                     Debug.Print("No xennet found");
-                    try
-                    {
+                    
                         RecordDevices("Emulated");
                         StoreSavedNetworkSettingsToEmulatedDevices();
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.Print("Store changed settings " + e.ToString());
-                    }
+                    
                 }
 
-            }
-            catch (Exception e)
-            {
-                Debug.Print(e.ToString());
-                throw;
-            }
+            
         }
     }
 
@@ -1070,8 +1012,7 @@ namespace xenwinsvc
             string macKey = String.Format("{0}/{1}/mac", attrPath, deviceId);
 
             // Update the xenstore info
-            try
-            {
+
                 // Update name
                 AXenStoreItem xenName = wmisession.GetXenStoreItem(nameKey);
                 xenName.value = nic.Name;
@@ -1087,11 +1028,7 @@ namespace xenwinsvc
                 // Update the ipv6 info
                 updateVFIpInfo(deviceId, System.Net.Sockets.AddressFamily.InterNetworkV6, nic);
 
-            }
-            catch (Exception e)
-            {
-                Debug.Print("updateVFXenstoreAttrInfo error: {0}", e);
-            }
+
 
         }
    

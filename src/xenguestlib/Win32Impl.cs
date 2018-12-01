@@ -237,7 +237,8 @@ namespace xenwinsvc
         {
             IntPtr token;
             if (!WTSQueryUserToken(sessionId, out token)) {
-                throw Error("WTSQueryUserToken");
+                //throw Error("WTSQueryUserToken");
+                return IntPtr.Zero;
             }
             return token;
         }
@@ -989,7 +990,7 @@ namespace xenwinsvc
                 const int size = 1024;
                 StringBuilder volname = new StringBuilder(size, size);
                 IntPtr ptr = FindFirstVolume(volname, size);
-                if (ptr.ToInt32() != INVALID_HANDLE_VALUE)
+                if (ptr.ToInt64() != INVALID_HANDLE_VALUE)
                 {
                     volumes.Add(new Volume(volname.ToString()));
                     while (FindNextVolume(ptr, volname, size))

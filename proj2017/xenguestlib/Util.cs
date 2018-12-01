@@ -215,12 +215,12 @@ namespace xenguestlib
             public static bool macsMatch(string mac, NetworkInterface nic)
             {
                 byte[] softMacbytes = nic.GetPhysicalAddress().GetAddressBytes();
-                byte[] permanentMacBytes = getPermanentMacFromSoftMac(softMacbytes);
-                if (null == permanentMacBytes)
-                {
+                //byte[] permanentMacBytes = getPermanentMacFromSoftMac(softMacbytes);
+                //if (null == permanentMacBytes)
+                //{
                     Debug.Print("Could not find permanent mac address for {0}, use soft mac", nic.GetPhysicalAddress().ToString());
-                    permanentMacBytes = softMacbytes;
-                }
+                    byte[] permanentMacBytes = softMacbytes;
+                //}
                 byte[] macBytes = getByteArrayfromMacString(mac);
                 return matchByteArray(macBytes,permanentMacBytes);
             }
@@ -232,10 +232,12 @@ namespace xenguestlib
             /// <returns>true if match, otherwise false</returns>
             public static bool macsMatch(string permanentMacStr, string softMacString) 
             {
-                if (null == permanentMacStr || null == softMacString) return false;
-                byte[] permanentMacBytes = getPermanentMacFromSoftMac(softMacString);
-                byte[] macBytes = getByteArrayfromMacString(permanentMacStr);
-                return matchByteArray(permanentMacBytes, macBytes);
+                return true;
+
+                //if (null == permanentMacStr || null == softMacString) return false;
+                //byte[] permanentMacBytes = getPermanentMacFromSoftMac(softMacString);
+                //byte[] macBytes = getByteArrayfromMacString(permanentMacStr);
+                //return matchByteArray(permanentMacBytes, macBytes);
             }
 
             /// <summary>

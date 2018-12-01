@@ -53,7 +53,7 @@ namespace xenwinsvc
         class ClipboardAccess : IDisposable
         {
 
-            string currentclipboard="";
+            string currentclipboard = "";
             bool currentclipboardchanged = false;
             string totalclipboard = "";
             string totalclientclipboard = null;
@@ -74,7 +74,8 @@ namespace xenwinsvc
 
             void onClientClipboard()
             {
-                if (xsReportClipboard.Exists()) {
+                if (xsReportClipboard.Exists())
+                {
                     string newclipboard = xsReportClipboard.value;
                 }
                 else
@@ -115,12 +116,9 @@ namespace xenwinsvc
 
             public void OnClientClipboard(object sender, EventArrivedEventArgs e)
             {
-                try {
-                    onClientClipboard();
-                }
-                catch (Exception ex) {
-                    WmiBase.Singleton.DebugMsg("Client Clipboard Exception: "+ex.ToString());
-                }
+
+                onClientClipboard();
+
             }
 
             private object deprivLock = new object();
@@ -142,7 +140,8 @@ namespace xenwinsvc
                 }
             }
 
-            public void PushClientClipboard() {
+            public void PushClientClipboard()
+            {
                 if (!currentclipboard.Equals(""))
                 {
                     setClientClipboard(currentclipboard);
@@ -177,7 +176,7 @@ namespace xenwinsvc
                         return;
                     }
                 }
-                catch 
+                catch
                 {
                     return;
                 }
@@ -196,12 +195,9 @@ namespace xenwinsvc
             }
             public void OnServerClipboard(object sender, EventArrivedEventArgs e)
             {
-                try {
-                    onServerClipboard();
-                }
-                catch (Exception ex) {
-                    WmiBase.Singleton.DebugMsg("Server Clipboard Exception: "+ex.ToString());
-                }
+
+                onServerClipboard();
+
             }
 
 
@@ -277,19 +273,22 @@ namespace xenwinsvc
             ProcessWaitHandle workerWaiter;
             RegisteredWaitHandle registeredWorkerWaiter;
 
-            static public void AddToXDIgnoreApplicationList() {
+            static public void AddToXDIgnoreApplicationList()
+            {
                 // XenDesktop in 'seamless' mode waits until all console process terminate before
                 // ending a session.  Since XenDpriv runs forever, XD never ends a seamless session
                 //
                 // the solution is to ensure we are added to a registry entry at 
                 // HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\XCP-ng\wfshell\TWI\LogoffCheckSysModules 
 
-                RegistryKey key = Registry.LocalMachine.CreateSubKey("SYSTEM\\CurrentControlSet\\Control\\XCP-ng\\wfshell\\TWI",RegistryKeyPermissionCheck.ReadWriteSubTree);
-                string value = (string) key.GetValue("LogoffCheckSysModules","");
-                if (string.IsNullOrEmpty(value)) {
+                RegistryKey key = Registry.LocalMachine.CreateSubKey("SYSTEM\\CurrentControlSet\\Control\\XCP-ng\\wfshell\\TWI", RegistryKeyPermissionCheck.ReadWriteSubTree);
+                string value = (string)key.GetValue("LogoffCheckSysModules", "");
+                if (string.IsNullOrEmpty(value))
+                {
                     value = Branding.Instance.getString("FILENAME_dpriv");
                 }
-                else {
+                else
+                {
                     if (!value.Contains(Branding.Instance.getString("FILENAME_dpriv")))
                     {
                         value = value + "," + Branding.Instance.getString("FILENAME_dpriv");
@@ -307,28 +306,22 @@ namespace xenwinsvc
                 this.wphandler = wphandler;
 
                 workerlock = new object();
-                try
-                {
-                    comms = new CommServer(this);
-                }
-                catch (Exception e)
-                {
-                    wmisession.Log("Comms server failed to start:" + e.ToString());
-                    throw;
-                }
+
+                comms = new CommServer(this);
+
                 try
                 {
                     AddToXDIgnoreApplicationList();
                     string path = (string)Registry.GetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\XCP-ng\\XenTools", "Install_Dir", "");
                     string fullpath = string.Format("{0}\\" + Branding.Instance.getString("FILENAME_dpriv"), path);
-                    string cmdline = string.Format(Branding.Instance.getString("FILENAME_dpriv")+" {0}", comms.secret);
+                    string cmdline = string.Format(Branding.Instance.getString("FILENAME_dpriv") + " {0}", comms.secret);
                     this.worker = new SafeWaitHandle(Win32Impl.CreateUserProcess(consoletoken, fullpath, cmdline), true);
                     workerWaiter = new ProcessWaitHandle(this.worker);
                     registeredWorkerWaiter = ThreadPool.RegisterWaitForSingleObject(workerWaiter, handleWorker, null, Timeout.Infinite, true);
                     this.workerrunning = true;
                     wmisession.Log("Worker Process spawned");
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     wmisession.Log("Worker process spawn exception : " + e.ToString());
                     comms.CloseMessagePipes();
@@ -336,11 +329,13 @@ namespace xenwinsvc
                     throw;
                 }
             }
+
             void handleWorker(object nothing, bool timeout)
             {
                 wmisession.Log("Worker process has terminated");
                 Stop(true);
             }
+
             public void Stop(bool callbackOnFinished)
             {
                 lock (workerlock)
@@ -356,22 +351,23 @@ namespace xenwinsvc
 
                         wmisession.Log("Stopping worker process " + worker.DangerousGetHandle().ToString());
                         registeredWorkerWaiter.Unregister(null);
-                        try
-                        {
-                            // Don't kill the process.  If we have closed the Pipes, then that should be sufficient
-                            // Win32Impl.KillProcess(worker.DangerousGetHandle(), 1);
-                        }
-                        catch
-                        {
-                            //If we fail to kill, we want to ignore this fact.  An error is already logged.
-                        }
+                        //try
+                        //{
+                        //    // Don't kill the process.  If we have closed the Pipes, then that should be sufficient
+                        //    // Win32Impl.KillProcess(worker.DangerousGetHandle(), 1);
+                        //}
+                        //catch
+                        //{
+                        //    //If we fail to kill, we want to ignore this fact.  An error is already logged.
+                        //}
                         workerrunning = false;
-                        if (callbackOnFinished) {
+                        if (callbackOnFinished)
+                        {
                             wphandler.WorkerProcessFinished();
                         }
                     }
                 }
- 
+
             }
             void IDeprivClient.SetClipboard(string value)
             {
@@ -390,16 +386,12 @@ namespace xenwinsvc
 
             void ICommunicator.HandleFailure(string reason)
             {
-                try {
-                    wmisession.Log("Communications broken, resetting client : "+reason);
-                    WmiBase.Singleton.DebugMsg("Comms failure :" + reason + "\n" + (new System.Diagnostics.StackTrace()).ToString());
-                }
-                catch {
-                    // If our logging causes us to throw exceptions, ignore
-                }
-                finally {
-                    Stop(true);
-                }
+
+                wmisession.Log("Communications broken, resetting client : " + reason);
+                WmiBase.Singleton.DebugMsg("Comms failure :" + reason + "\n" + (new System.Diagnostics.StackTrace()).ToString());
+
+                Stop(true);
+
             }
             void ICommunicator.HandleConnected(Communicator client)
             {
@@ -420,7 +412,7 @@ namespace xenwinsvc
         {
             ClipboardAccess clipboard;
             WmiSession wmisession;
-            
+
             bool running = true; // The clipboard thread is running and not intending to quit
             bool gotConsole = false; // We have access to a console on which to run the depriv client
             uint session;
@@ -444,31 +436,29 @@ namespace xenwinsvc
 
             public void WorkerProcessFinished()
             {
-                try
+
+                workerProcess = null;
+                WmiBase.Singleton.DebugMsg("Worker process died");
+                if ((lastStartAttempt - DateTime.UtcNow) <
+                    TimeSpan.FromMilliseconds(restartTime))
                 {
-                    workerProcess = null;
-                    WmiBase.Singleton.DebugMsg("Worker process died");
-                    if ((lastStartAttempt - DateTime.UtcNow) < 
-                        TimeSpan.FromMilliseconds(restartTime)) {
-                        Thread.Sleep(restartTime);
-                        restartTime = restartTime * 2;
-                        if (restartTime > 120000) {
-                            restartTime = 120000;
-                        }
-                    }
-                    else {
-                        restartTime = 1000;
-                    }
-                    if (running)
+                    Thread.Sleep(restartTime);
+                    restartTime = restartTime * 2;
+                    if (restartTime > 120000)
                     {
-                        wmisession.Log("Worker process restarting");
-                        getConsoleAndSpawn();
+                        restartTime = 120000;
                     }
                 }
-                catch (Exception e)
+                else
                 {
-                    exceptionhandler.HandleException("Clipboard handle worker", e);
+                    restartTime = 1000;
                 }
+                if (running)
+                {
+                    wmisession.Log("Worker process restarting");
+                    getConsoleAndSpawn();
+                }
+
             }
 
 
@@ -489,30 +479,34 @@ namespace xenwinsvc
             {
                 if (running)
                 {
-                    try {
-                        session = Win32Impl.WTSGetActiveConsoleSessionId();
-                        wmisession.Log("New session "+session.ToString());
-                        if (session != 0xFFFFFFFF)
-                        {
-                            wmisession.Log("Checking to see if XenDesktop is active");
-                            if (XenAppXenDesktop.ActiveConsoleSession(session))
-                            {
-                                wmisession.Log("Active XenDesktop session, not spawning worker");
-                                gotConsole = false;
-                                return;
-                            }
 
-                            Win32Impl.AcquireSystemPrivilege(Win32Impl.SE_TCB_NAME);
-                            consoletoken = Win32Impl.QueryUserToken(session);
+                    session = Win32Impl.WTSGetActiveConsoleSessionId();
+                    wmisession.Log("New session " + session.ToString());
+                    if (session != 0xFFFFFFFF)
+                    {
+                        wmisession.Log("Checking to see if XenDesktop is active");
+                        if (XenAppXenDesktop.ActiveConsoleSession(session))
+                        {
+                            wmisession.Log("Active XenDesktop session, not spawning worker");
+                            gotConsole = false;
+                            return;
+                        }
+
+                        Win32Impl.AcquireSystemPrivilege(Win32Impl.SE_TCB_NAME);
+                        consoletoken = Win32Impl.QueryUserToken(session);
+                        if (consoletoken != IntPtr.Zero)
+                        {
                             wmisession.Log("Got new session token");
                             gotConsole = true;
                             spawnWorker();
                         }
+                        else
+                        {
+                            wmisession.Log("Not got console");
+                            gotConsole = false;
+                        }
                     }
-                    catch(Exception e) {
-                        gotConsole = false;
-                        WmiBase.Singleton.DebugMsg(e.ToString());
-                    }
+
                 }
                 else
                 {
@@ -563,20 +557,16 @@ namespace xenwinsvc
                 {
 
                     wmisession.Log("Spawn Worker Process");
-                    
-                    if (workerProcess == null) {
-                        try
-                        {
-                            lastStartAttempt = DateTime.UtcNow;
-                            workerProcess = new WorkerProcess(clipboard, wmisession, exceptionhandler, this, consoletoken);
-                        }
-                        catch (Exception e)
-                        {
-                            wmisession.Log("Worker process failed to start " + e.ToString());
-                            gotConsole = false;
-                        }
+
+                    if (workerProcess == null)
+                    {
+
+                        lastStartAttempt = DateTime.UtcNow;
+                        workerProcess = new WorkerProcess(clipboard, wmisession, exceptionhandler, this, consoletoken);
+
                     }
-                    else {
+                    else
+                    {
                         wmisession.Log("Unexpectedly trying to spawn a worker process while one is running");
                         gotConsole = false;
                     }
@@ -590,7 +580,7 @@ namespace xenwinsvc
             {
                 Win32Impl.Close(this.consoletoken);
             }
-            
+
 
             public WaitHandle Run()
             {
@@ -600,18 +590,13 @@ namespace xenwinsvc
 
             public void HandleConsoleChanged(System.ServiceProcess.SessionChangeReason reason)
             {
-                try
+
+                if ((reason == System.ServiceProcess.SessionChangeReason.ConsoleConnect) ||
+                    (reason == System.ServiceProcess.SessionChangeReason.SessionLogon))
                 {
-                    if ((reason == System.ServiceProcess.SessionChangeReason.ConsoleConnect) || 
-                        (reason == System.ServiceProcess.SessionChangeReason.SessionLogon))
-                    {
-                        handleConsoleChanged();
-                    }
+                    handleConsoleChanged();
                 }
-                catch (Exception ex)
-                {
-                    exceptionhandler.HandleException("Clipboard Changed", ex);
-                }
+
             }
         }
 
@@ -663,10 +648,13 @@ namespace xenwinsvc
 
         }
 
-        public void HandleSessionChange(System.ServiceProcess.SessionChangeReason changeargs, uint sessionId) {
-            lock (statelock) {
-                if (running && 
-                    (sessionId==Win32Impl.WTSGetActiveConsoleSessionId())) {
+        public void HandleSessionChange(System.ServiceProcess.SessionChangeReason changeargs, uint sessionId)
+        {
+            lock (statelock)
+            {
+                if (running &&
+                    (sessionId == Win32Impl.WTSGetActiveConsoleSessionId()))
+                {
                     state.HandleConsoleChanged(changeargs);
                 }
             }
@@ -683,7 +671,7 @@ namespace xenwinsvc
                 }
             }
             WmiBase.Singleton.DebugMsg("Clipboard thread finishing");
-            
+
         }
 
         bool disposed = false;

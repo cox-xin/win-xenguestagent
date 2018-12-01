@@ -52,20 +52,27 @@ namespace xenwinsvc
         static Stack<IDisposable> disposees = new Stack<IDisposable>();
         static public void Add(IDisposable disposee)
         {
-            lock (disposelock) {
-                if (!disposees.Contains(disposee)) {
+            lock (disposelock)
+            {
+                if (!disposees.Contains(disposee))
+                {
                     disposees.Push(disposee);
                 }
             }
         }
-        static public void Dispose() {
-            lock (disposelock) {
-                while (disposees.Count > 0) {
-                    try {
+        static public void Dispose()
+        {
+            lock (disposelock)
+            {
+                while (disposees.Count > 0)
+                {
+                    try
+                    {
                         disposees.Pop().Dispose();
                     }
-                    catch (Exception e) {
-                        Debug.Print("Disposal error: "+e.ToString());
+                    catch (Exception e)
+                    {
+                        Debug.Print("Disposal error: " + e.ToString());
                     }
                 }
             }
@@ -85,28 +92,34 @@ namespace xenwinsvc
             {
                 feature.doAdvert();
             }
-                
+
         }
-        protected void addAdvert(string advertname) {
+        protected void addAdvert(string advertname)
+        {
             advert = wmisession.GetXenStoreItem(advertname);
             features.Add(this);
         }
-        protected void doAdvert() {
-            try {
+        protected void doAdvert()
+        {
+            try
+            {
                 advert.value = "1";
-                
+
             }
-            catch (System.Management.ManagementException e) {
+            catch (System.Management.ManagementException e)
+            {
                 enabled = false;
-                if (e.ErrorCode == ManagementStatus.AccessDenied) {
-                    wmisession.Log("Failed to advertise "+name+" (feature disabled)");
+                if (e.ErrorCode == ManagementStatus.AccessDenied)
+                {
+                    wmisession.Log("Failed to advertise " + name + " (feature disabled)");
                 }
-                else {
-                        throw e;
+                else
+                {
+                    throw e;
                 }
             }
         }
-        protected AXenStoreItem controlKey=null;
+        protected AXenStoreItem controlKey = null;
         WmiWatchListener listener = null;
         IExceptionHandler exceptionhandler;
         bool controlmustexist = true;
@@ -118,14 +131,12 @@ namespace xenwinsvc
             wmisession.Log("New Feature");
             controlKey = wmisession.GetXenStoreItem(control);
             this.controlmustexist = controlmustexist;
-            try
+
+            if (controlKey != null && controlKey.value != "")
             {
-                if (controlKey.value != "")
-                {
-                    wmisession.Log("Control key "+control+":"+controlKey.value);
-                }
+                wmisession.Log("Control key " + control + ":" + controlKey.value);
             }
-            catch {}
+
             enabled = true;
             listener = controlKey.Watch(new EventArrivedEventHandler(onFeatureWrapper));
             if (!advertise.Equals(""))
@@ -133,7 +144,7 @@ namespace xenwinsvc
                 this.addAdvert(advertise);
             }
             Disposer.Add(this);
-         
+
         }
         protected abstract void onFeature();
         void onFeatureWrapper(object nothing, EventArrivedEventArgs args)
@@ -144,16 +155,20 @@ namespace xenwinsvc
             wmisession.AwaitTransactionCompletion();
             try
             {
-                if (enabled && ((!controlmustexist) || controlKey.Exists())) {
+                if (enabled && ((!controlmustexist) || controlKey.Exists()))
+                {
                     onFeature();
                 }
             }
-            catch (System.Management.ManagementException e) {
+            catch (System.Management.ManagementException e)
+            {
                 enabled = false;
-                if (e.ErrorCode == ManagementStatus.AccessDenied) {
-                    wmisession.Log("Feature "+name+" disabled");
+                if (e.ErrorCode == ManagementStatus.AccessDenied)
+                {
+                    wmisession.Log("Feature " + name + " disabled");
                 }
-                else {
+                else
+                {
                     throw e;
                 }
             }
@@ -166,7 +181,8 @@ namespace xenwinsvc
 
         protected virtual void Finish()
         {
-            if (advert != null) {
+            if (advert != null)
+            {
                 if (advert != null)
                 {
                     try
@@ -178,7 +194,8 @@ namespace xenwinsvc
                 features.Remove(this);
                 advert = null;
             }
-            if (listener != null) {
+            if (listener != null)
+            {
                 listener.Dispose();
                 listener = null;
             }
@@ -210,7 +227,8 @@ namespace xenwinsvc
 
     }
 
-    public class FeatureGC : Feature {
+    public class FeatureGC : Feature
+    {
         public FeatureGC(IExceptionHandler exceptionhandler) : base("GC", "", "control/garbagecollect", true, exceptionhandler) { }
         override protected void onFeature()
         {
@@ -235,16 +253,20 @@ namespace xenwinsvc
         public FeatureDumpLog(IExceptionHandler exceptionhandler) : base("Dump Log", "", "control/dumplog", true, exceptionhandler) { }
         override protected void onFeature()
         {
-            try {
+            try
+            {
                 WmiBase.Singleton.DumpDebugMsg();
             }
-            catch {
+            catch
+            {
                 Debug.Print("Failed to DumpLog");
             }
-            try {
+            try
+            {
                 controlKey.Remove();
             }
-            catch {
+            catch
+            {
                 Debug.Print("Failed to remove dump log control key");
             }
         }
@@ -290,39 +312,45 @@ namespace xenwinsvc
         public FeatureSetComputerName(IExceptionHandler exceptionhandler)
             : base(Branding.Instance.getString("BRANDING_setComputerName"), "control/feature-setcomputername", "control/setcomputername/action", true, exceptionhandler)
         {
-            name =  wmisession.GetXenStoreItem("control/setcomputername/name");
-            state =  wmisession.GetXenStoreItem("control/setcomputername/state");
+            name = wmisession.GetXenStoreItem("control/setcomputername/name");
+            state = wmisession.GetXenStoreItem("control/setcomputername/state");
             error = wmisession.GetXenStoreItem("control/setcomputername/error");
             warn = wmisession.GetXenStoreItem("control/setcomputername/warn");
         }
-        
-        void SetComputerName() {
+
+        void SetComputerName()
+        {
 
             wmisession.Log("Set Computer Name Requested");
             state.value = "InProgress";
             String defaultname;
             bool res;
 
-            try {
+            try
+            {
                 defaultname = name.value;
                 name.Remove();
             }
-            catch {
-                try {
+            catch
+            {
+                try
+                {
                     wmisession.Log("Setting computer name to default");
                     AXenStoreItem name = wmisession.GetXenStoreItem("name");
                     defaultname = name.value;
-                    
+
                 }
-                catch (Exception e){
-                    wmisession.Log("Unable to read default name for domain from xenstore: "+ e.ToString());
+                catch (Exception e)
+                {
+                    wmisession.Log("Unable to read default name for domain from xenstore: " + e.ToString());
                     error.value = "Can't read default computer name";
                     state.value = "Failed";
                     return;
                 }
             }
 
-            if (defaultname.Equals("")) {
+            if (defaultname.Equals(""))
+            {
                 wmisession.Log("Can't set to empty computer name");
                 error.value = "Computer name empty";
                 state.value = "Failed";
@@ -336,18 +364,19 @@ namespace xenwinsvc
 
             try
             {
-                wmisession.Log("Setting computer name to "+defaultname);
+                wmisession.Log("Setting computer name to " + defaultname);
                 Win32Impl.SetLastError(0);
                 res = Win32Impl.SetComputerNameEx(Win32Impl.COMPUTER_NAME_FORMAT.ComputerNamePhysicalDnsHostname, defaultname);
-                if (!res) {
+                if (!res)
+                {
                     wmisession.Log("Setting computer name failed " + Marshal.GetLastWin32Error().ToString());
-                    error.value = "Setting name failed (error code "+Marshal.GetLastWin32Error().ToString()+")";
+                    error.value = "Setting name failed (error code " + Marshal.GetLastWin32Error().ToString() + ")";
                     state.value = "Failed";
                     return;
                 }
                 wmisession.Log("Setting computer name succceded");
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 wmisession.Log("Exception setting computer name : " + e.ToString());
                 error.value = "Exception calling set computer name";
@@ -365,7 +394,8 @@ namespace xenwinsvc
                     return;
                 }
             }
-            catch{
+            catch
+            {
             }
             state.value = "SucceededNeedsReboot";
         }
@@ -373,9 +403,12 @@ namespace xenwinsvc
 
         override protected void onFeature()
         {
-            if (controlKey.Exists() && !state.Exists()) {
-                try {
-                    if (error.Exists()) {
+            if (controlKey.Exists() && !state.Exists())
+            {
+                try
+                {
+                    if (error.Exists())
+                    {
                         error.Remove();
                     }
                     if (warn.Exists())
@@ -389,21 +422,26 @@ namespace xenwinsvc
                         state.value = "Failed";
                         return;
                     }
-                    if (controlKey.value.Equals("set")) {
+                    if (controlKey.value.Equals("set"))
+                    {
                         SetComputerName();
                     }
-                    else {
+                    else
+                    {
                         error.value = "Unknown action : " + controlKey.value;
                         state.value = "Failed";
                     }
                 }
-                catch (Exception e) {
-                    if (!error.Exists()) {
-                        error.value=e.ToString();
+                catch (Exception e)
+                {
+                    if (!error.Exists())
+                    {
+                        error.value = e.ToString();
                     }
-                    state.value="Failed";
+                    state.value = "Failed";
                 }
-                finally {
+                finally
+                {
                     // We always want to remove the controlKey, so that
                     // it can be set again
                     controlKey.Remove();
@@ -554,17 +592,18 @@ namespace xenwinsvc
             }
         }
     }
-    public class FeatureTerminalServicesReset : Feature {
+    public class FeatureTerminalServicesReset : Feature
+    {
         AXenStoreItem datats;
         public FeatureTerminalServicesReset(IExceptionHandler exceptionhandler)
             : base("Terminal Services Reset", "control/feature-ts2", "data/ts", false, exceptionhandler)
         {
             datats = wmisession.GetXenStoreItem("data/ts");
-            try 
+            try
             {
                 Disposer.Add(WmiBase.Singleton.ListenForEvent("__InstanceModificationEvent", new EventArrivedEventHandler(onFeatureWrapper)));
             }
-            catch 
+            catch
             {
                 Trace.WriteLine("Terminal Services namespace not available on this version of windows");
             }
@@ -620,14 +659,16 @@ namespace xenwinsvc
                 INetFwService services = fwMgr.LocalPolicy.CurrentProfile.Services.Item(NET_FW_SERVICE_TYPE_.NET_FW_SERVICE_REMOTE_DESKTOP);
                 services.Enabled = Enable;
             }
-            catch {
-                    wmisession.Log("Cannot modify Firewall RDP setting");
+            catch
+            {
+                wmisession.Log("Cannot modify Firewall RDP setting");
             }
         }
 
         void set(bool enable)
         {
-            try {
+            try
+            {
                 ManagementObject termserv = WmiBase.Singleton.Win32_TerminalServiceSetting;
                 ManagementBaseObject mb = termserv.GetMethodParameters("SetAllowTSConnections");
                 mb["AllowTSConnections"] = (uint)(enable ? 1 : 0);
@@ -635,7 +676,8 @@ namespace xenwinsvc
                 ChangeFirewallException(enable);
                 termserv.InvokeMethod("SetAllowTSConnections", mb, null);
             }
-            catch {
+            catch
+            {
                 wmisession.Log("Terminal Services not found");
             }
         }
@@ -667,34 +709,36 @@ namespace xenwinsvc
 
     public class FeatureXSBatchCommand : Feature
     {
-        AXenStoreItem    state;
-        AXenStoreItem    script;
-        AXenStoreItem    ret;
-        AXenStoreItem    stdout;
-        AXenStoreItem    stderr;
-        int             returnCode;
-        string          stdoutStr;
-        string          stderrStr;
-        string          batchFile   = "";
-        object          cmdLock     = new object();
-        bool            newCommand;
+        AXenStoreItem state;
+        AXenStoreItem script;
+        AXenStoreItem ret;
+        AXenStoreItem stdout;
+        AXenStoreItem stderr;
+        int returnCode;
+        string stdoutStr;
+        string stderrStr;
+        string batchFile = "";
+        object cmdLock = new object();
+        bool newCommand;
 
-        const string    READY       = "READY";
-        const string    IN_PROGRESS = "IN PROGRESS";
-        const string    FAILURE     = "FAILURE";
-        const string    TRUNCATED   = "TRUNCATED";
-        const string    SUCCESS     = "SUCCESS";
-        const int       MAXLENGTH   = 1024;
-        
+        const string READY = "READY";
+        const string IN_PROGRESS = "IN PROGRESS";
+        const string FAILURE = "FAILURE";
+        const string TRUNCATED = "TRUNCATED";
+        const string SUCCESS = "SUCCESS";
+        const int MAXLENGTH = 1024;
+
         public FeatureXSBatchCommand(IExceptionHandler exceptionhandler) :
             base("XS Batch Command", "", "control/batcmd/state", true, exceptionhandler)
         {
-            if (wmisession.GetXenStoreItem("control/feature-remote-exec").Exists()) {
+            if (wmisession.GetXenStoreItem("control/feature-remote-exec").Exists())
+            {
                 wmisession.Log("Remote exec found");
                 this.Dispose();
-                throw new Exception("remote-exec exists");
+                return;
+                //throw new Exception("remote-exec exists");
             }
-            
+
             this.state = wmisession.GetXenStoreItem("control/batcmd/state");
             this.script = wmisession.GetXenStoreItem("control/batcmd/script");
             this.ret = wmisession.GetXenStoreItem("control/batcmd/return");
@@ -770,11 +814,11 @@ namespace xenwinsvc
 
             System.IO.Directory.CreateDirectory(tmpDir, sec);
 
-            using (System.IO.StreamWriter execstream = new System.IO.StreamWriter(System.IO.File.Create(tmpDir+"\\exec.bat",1024, System.IO.FileOptions.None, filesec)))
+            using (System.IO.StreamWriter execstream = new System.IO.StreamWriter(System.IO.File.Create(tmpDir + "\\exec.bat", 1024, System.IO.FileOptions.None, filesec)))
             {
                 execstream.Write(batchfile);
             }
-            
+
             try
             {
                 ProcessStartInfo startInfo = new ProcessStartInfo(Environment.GetEnvironmentVariable("SystemRoot") + "\\System32\\cmd.exe", "/Q /C " + tmpDir + "\\exec.bat")
@@ -787,9 +831,10 @@ namespace xenwinsvc
                 using (Process proc = new Process())
                 {
                     proc.StartInfo = startInfo;
-                    
-                    proc.OutputDataReceived += 
-                        delegate(object sendingProcess, DataReceivedEventArgs outline) {
+
+                    proc.OutputDataReceived +=
+                        delegate (object sendingProcess, DataReceivedEventArgs outline)
+                        {
                             if (!String.IsNullOrEmpty(outline.Data))
                             {
                                 lock (stdoutStr)
@@ -799,9 +844,10 @@ namespace xenwinsvc
                                 }
                             }
                         };
-                    
-                    proc.ErrorDataReceived += 
-                        delegate(object sendingProcess, DataReceivedEventArgs outline) {
+
+                    proc.ErrorDataReceived +=
+                        delegate (object sendingProcess, DataReceivedEventArgs outline)
+                        {
                             if (!String.IsNullOrEmpty(outline.Data))
                             {
                                 lock (stderrStr)
@@ -816,13 +862,13 @@ namespace xenwinsvc
                     proc.BeginOutputReadLine();
                     proc.BeginErrorReadLine();
                     proc.WaitForExit();
-                    
+
                     returnCode = proc.ExitCode;
                 }
             }
             finally
             {
-                System.IO.Directory.Delete(tmpDir,true);
+                System.IO.Directory.Delete(tmpDir, true);
             }
         }
 
@@ -833,14 +879,17 @@ namespace xenwinsvc
 
             // Do not attempt to process the feature if controlKey.value is not READY
             // Because writing back to the control key will trigger this feature again
-            if (!controlKey.Exists()) 
-                    return;
-            try {
-                if (!controlKey.value.Equals(FeatureXSBatchCommand.READY)){
+            if (!controlKey.Exists())
+                return;
+            try
+            {
+                if (!controlKey.value.Equals(FeatureXSBatchCommand.READY))
+                {
                     return;
                 }
             }
-            catch {
+            catch
+            {
                 return;
             }
 
@@ -852,7 +901,7 @@ namespace xenwinsvc
                     try
                     {
                         handleTransaction(
-                            delegate()
+                            delegate ()
                             {
                                 if (controlKey.Exists())
                                 {
@@ -867,7 +916,7 @@ namespace xenwinsvc
                     }
                     catch (Exception e)
                     {
-                        this.stderr.value = "Command Initialisation Failed : "+e.ToString();
+                        this.stderr.value = "Command Initialisation Failed : " + e.ToString();
                         result = FeatureXSBatchCommand.FAILURE;
                         state.value = result;
                         return;
@@ -879,7 +928,8 @@ namespace xenwinsvc
                     }
                 }
 
-                if ((int)Registry.GetValue("HKEY_LOCAL_MACHINE\\Software\\XCP-ng\\Xentools", "NoRemoteExecution", 0)!=0) {
+                if ((int)Registry.GetValue("HKEY_LOCAL_MACHINE\\Software\\XCP-ng\\Xentools", "NoRemoteExecution", 0) != 0)
+                {
                     this.stderr.value = "VM Blocked Remote Execution By Registry Key";
                     result = FeatureXSBatchCommand.FAILURE;
                     state.value = result;

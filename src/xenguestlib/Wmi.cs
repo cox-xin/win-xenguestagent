@@ -37,6 +37,7 @@ using System.Threading;
 using System.Runtime.InteropServices;
 using System.Management;
 using System.Windows.Forms;
+using System.Linq;
 
 namespace xenwinsvc
 {
@@ -53,7 +54,8 @@ namespace xenwinsvc
 
         private Queue<string> debugmsg;
 
-        public static bool HandleManagementException(ManagementException manex) {
+        public static bool HandleManagementException(ManagementException manex)
+        {
             if ((manex.ErrorCode == ManagementStatus.InvalidObject) ||
                 (manex.ErrorCode == ManagementStatus.InvalidClass))
             {
@@ -79,10 +81,10 @@ namespace xenwinsvc
         private ManagementObject getBase()
         {
 
-                ManagementPath mpath = new ManagementPath("XCPngXenStoreBase");
-                ManagementClass manclass = new ManagementClass(scope, mpath, null);
-                ManagementObjectCollection moc = manclass.GetInstances();
-                return getFirst(moc);
+            ManagementPath mpath = new ManagementPath("XCPngXenStoreBase");
+            ManagementClass manclass = new ManagementClass(scope, mpath, null);
+            ManagementObjectCollection moc = manclass.GetInstances();
+            return getFirst(moc);
 
         }
 
@@ -153,18 +155,21 @@ namespace xenwinsvc
         {
             get
             {
-                 ManagementClass mc = new ManagementClass("Win32_NetworkAdapterConfiguration");
-                 mc.Scope.Options.EnablePrivileges = true;
-                 win32NetworkAdapterConfiguration = mc.GetInstances();
-                 return win32NetworkAdapterConfiguration;
+                ManagementClass mc = new ManagementClass("Win32_NetworkAdapterConfiguration");
+                mc.Scope.Options.EnablePrivileges = true;
+                win32NetworkAdapterConfiguration = mc.GetInstances();
+                return win32NetworkAdapterConfiguration;
             }
         }
 
         const int DEBUG_SIZE = 200;
-        public void DebugMsg(string message) {
+        public void DebugMsg(string message)
+        {
             Debug.Print(message);
-            try {
-                lock (syncSingleton) {
+            try
+            {
+                lock (syncSingleton)
+                {
                     if (debugmsg.Count == DEBUG_SIZE)
                     {
                         debugmsg.Dequeue();
@@ -172,17 +177,20 @@ namespace xenwinsvc
                     debugmsg.Enqueue(message);
                 }
             }
-            catch(Exception e) {
-                wmisession.Log("Message Logger Failure\n"+e.ToString());
+            catch (Exception e)
+            {
+                wmisession.Log("Message Logger Failure\n" + e.ToString());
             }
         }
-        public void DumpDebugMsg() {
-            while (debugmsg.Count > 0) {
-                wmisession.Log("LOGGED: "+debugmsg.Dequeue());
+        public void DumpDebugMsg()
+        {
+            while (debugmsg.Count > 0)
+            {
+                wmisession.Log("LOGGED: " + debugmsg.Dequeue());
             }
         }
 
-        private WmiBase() 
+        private WmiBase()
         {
             debugmsg = new Queue<string>();
             syncSingleton = new Object();
@@ -205,7 +213,7 @@ namespace xenwinsvc
                 return (ulong)(getBase()["XenTime"]);
             }
         }
-        
+
         bool keymayhavechanged = false;
         int changecount; // a value which is incremented every time a 
                          // change is made to xenstore by us
@@ -225,14 +233,16 @@ namespace xenwinsvc
                 keymayhavechanged = true;
             }
         }
-        
-        public void Kick(bool force=true) {
-            lock (syncSingleton) 
+
+        public void Kick(bool force = true)
+        {
+            lock (syncSingleton)
             {
                 // We kick eiter if we are told to (the default), or
                 // if we know we have changed xenstore since we last
                 // kicked
-                if (force || keymayhavechanged) {
+                if (force || keymayhavechanged)
+                {
                     updatecounter++;
                     xsupdated.value = "1";
                     xsupdatedcount.value = updatecounter.ToString();
@@ -243,11 +253,14 @@ namespace xenwinsvc
 
         public static ManagementObject getFirst(ManagementObjectCollection collection)
         {
-            if (collection.Count < 1)
-                throw new Exception("No objects found");
+            // Workaround to get the first element
             foreach (ManagementObject mobj in collection)
+            {
                 return mobj;
-            throw new Exception("No objects found");
+            }
+
+            //throw new Exception("No objects found");
+            return null;
         }
 
         public WmiSession GetXenStoreSession(string name)
@@ -261,8 +274,9 @@ namespace xenwinsvc
             }
         }
 
-        private ManagementScope scope =null;
-        public ManagementScope Scope {
+        private ManagementScope scope = null;
+        public ManagementScope Scope
+        {
             get
             {
                 lock (syncSingleton)
@@ -277,7 +291,7 @@ namespace xenwinsvc
             }
         }
 
-        private ManagementObject xenbase=null;
+        private ManagementObject xenbase = null;
 
         static public void Reset()
         {
@@ -317,7 +331,7 @@ namespace xenwinsvc
             {
                 return Singleton.intCheck();
             }
-            catch
+            catch (Exception ex)
             {
                 return false;
             }
@@ -361,7 +375,7 @@ namespace xenwinsvc
                 return instance;
             }
         }
-       
+
     }
 
     public class XenStoreItemCached : XenStoreItem
@@ -378,65 +392,31 @@ namespace xenwinsvc
         {
             get
             {
-                try
-                {
-                    initialised = true;
-                    try
-                    {
-                        contents = base.value;
-                    }
-                    catch
-                    {
-                        WmiBase.Singleton.DebugMsg("Unable to access base");
-                        throw;
-                    }
-                    return contents;
-                }
-                catch
-                {
-                    WmiBase.Singleton.DebugMsg("Unable to read " + base.name);
-                    throw;
-                }
+
+                initialised = true;
+
+                contents = base.value;
+
+                return contents;
+
             }
             set
             {
-                try
+
+                string toset = value;
+                if (toset == null)
                 {
-                    string toset = value;
-                    if (toset ==null )
-                    {
-                        toset = "";
-                    }
-                    if ((!initialised) || (!contents.Equals(toset)))
-                    {
-                        try
-                        {
-                            base.value = toset;
-                            initialised = true;
-                        }
-                        catch
-                        {
-                            Debug.Print("Base is : " + base.ToString());
-                            Debug.Print("Value is : " + toset);
-                            if (toset.Equals(""))
-                            {
-                                Debug.Print("toset is the empty string");
-                            }
-                            if (toset.Equals(null))
-                            {
-                                Debug.Print("toset is null");
-                            }
-                            WmiBase.Singleton.DebugMsg("Unable to access base "+base.ToString());
-                            throw;
-                        }
-                        contents = toset;
-                    }
+                    toset = "";
                 }
-                catch
+                if ((!initialised) || (!contents.Equals(toset)))
                 {
-                    WmiBase.Singleton.DebugMsg("Unable to write " + base.name+" "+value);
-                    throw;
+
+                    base.value = toset;
+                    initialised = true;
+
+                    contents = toset;
                 }
+
             }
         }
 
@@ -447,12 +427,13 @@ namespace xenwinsvc
         }
     }
 
-    public class XenStoreItem:AXenStoreItem
+    public class XenStoreItem : AXenStoreItem
     {
         WmiSession wmisession;
         protected string name;
 
-        public string GetName() {
+        public string GetName()
+        {
             return name;
         }
 
@@ -472,8 +453,8 @@ namespace xenwinsvc
 
         bool readfail = false;
         bool writefail = false;
-        bool childfail=false;
-        override public  string value
+        bool childfail = false;
+        override public string value
         {
             get
             {
@@ -484,22 +465,20 @@ namespace xenwinsvc
                     status = ManagementStatus.NoError;
                     return res;
                 }
-                catch(ManagementException e) {
+                catch (ManagementException e)
+                {
                     status = e.ErrorCode;
-                    if (e.ErrorCode == ManagementStatus.AccessDenied) {
-                        if (!readfail) {
-                            wmisession.Log("Access Denied reading "+name);
+                    if (e.ErrorCode == ManagementStatus.AccessDenied)
+                    {
+                        if (!readfail)
+                        {
+                            wmisession.Log("Access Denied reading " + name);
                             readfail = true;
                         }
                     }
                     throw e;
                 }
-                catch
-                {
-                    status = ManagementStatus.Failed;
-                    wmisession.Log("Get value failed: " + name);
-                    throw;
-                }
+
             }
             set
             {
@@ -508,29 +487,29 @@ namespace xenwinsvc
                 {
                     toset = "";
                 }
-                try {
+                try
+                {
                     wmisession.SetValue(name, toset);
                     writefail = false;
                     status = ManagementStatus.NoError;
                 }
-                catch(ManagementException e) {
+                catch (ManagementException e)
+                {
                     status = e.ErrorCode;
-                    if (e.ErrorCode == ManagementStatus.AccessDenied) {
-                        if (!writefail) {
-                            wmisession.Log("Access Denied writing "+name);
+                    if (e.ErrorCode == ManagementStatus.AccessDenied)
+                    {
+                        if (!writefail)
+                        {
+                            wmisession.Log("Access Denied writing " + name);
                             writefail = true;
                         }
                     }
-                    else {
+                    else
+                    {
                         throw e;
                     }
                 }
-                catch
-                {
-                    status = ManagementStatus.Failed;
-                    wmisession.Log("Set value failed: " + name);
-                    throw;
-                }
+
 
             }
         }
@@ -540,62 +519,59 @@ namespace xenwinsvc
             {
                 try
                 {
-                    string[] kids =  wmisession.GetChildren(name);
+                    string[] kids = wmisession.GetChildren(name);
                     childfail = false;
                     status = ManagementStatus.NoError;
                     return kids;
                 }
-                catch(ManagementException me)
+                catch (ManagementException me)
                 {
                     status = me.ErrorCode;
-                    if (me.ErrorCode == ManagementStatus.AccessDenied) {
-                        if (!childfail) {
-                            wmisession.Log("Access Denied fetching children "+name);
+                    if (me.ErrorCode == ManagementStatus.AccessDenied)
+                    {
+                        if (!childfail)
+                        {
+                            wmisession.Log("Access Denied fetching children " + name);
                             childfail = true;
                         }
                     }
-                    else {
-                        wmisession.Log("GetChildren failed: " + name + " " +me.ErrorCode.ToString());
+                    else
+                    {
+                        wmisession.Log("GetChildren failed: " + name + " " + me.ErrorCode.ToString());
                     }
                     throw;
                 }
-                catch(Exception e)
-                {
-                    status = ManagementStatus.Failed;
-                    wmisession.Log("GetChildren failed: " + name+" "+e.ToString());
-                    throw;
-                }
+
             }
         }
         public override void Remove()
         {
             try
             {
-                    wmisession.RemoveValue(name);
-                    writefail = false;
-                    status = ManagementStatus.NoError;
+                wmisession.RemoveValue(name);
+                writefail = false;
+                status = ManagementStatus.NoError;
             }
-            catch(ManagementException me)
+            catch (ManagementException me)
             {
                 status = me.ErrorCode;
-                if (me.ErrorCode == ManagementStatus.AccessDenied) {
+                if (me.ErrorCode == ManagementStatus.AccessDenied)
+                {
                     if (!writefail)
-                    {   
+                    {
                         wmisession.Log("Remove failed: " + name + " Access Denied");
                         writefail = true;
                     }
                 }
-                else {
-                    wmisession.Log("Remove failed: " + name +" "+me.ErrorCode.ToString());
+                else
+                {
+                    wmisession.Log("Remove failed: " + name + " " + me.ErrorCode.ToString());
                     throw;
                 }
             }
-            catch {
-                status = ManagementStatus.Failed;
-                wmisession.Log("Remove failed: " + name);
-                throw;
-            }
+
         }
+
         override public bool Exists()
         {
             try
@@ -603,8 +579,10 @@ namespace xenwinsvc
                 wmisession.GetValue(name);
                 return true;
             }
-            catch(ManagementException me) {
-                if (me.ErrorCode == ManagementStatus.AccessDenied) {
+            catch (ManagementException me)
+            {
+                if (me.ErrorCode == ManagementStatus.AccessDenied)
+                {
                     throw;
                 }
                 return false;
@@ -616,7 +594,7 @@ namespace xenwinsvc
         }
     }
 
-    public abstract class AXenStoreItem 
+    public abstract class AXenStoreItem
     {
         protected ManagementStatus status = ManagementStatus.NoError;
         abstract public string[] children
@@ -660,11 +638,20 @@ namespace xenwinsvc
             //   3) leave the session monitor
             //
             System.Threading.Monitor.Enter(session);
+
             try
             {
-                session.InvokeMethod("AbortTransaction", null);
+                if (session.GetType().GetMethod("AbortTransaction", new Type[0]) != null)
+                {
+                    session.InvokeMethod("AbortTransaction", null);
+                }
             }
-            catch { }
+            catch (Exception ex)
+            {
+
+            }
+
+
             System.Threading.Monitor.Exit(session);
         }
 
@@ -677,46 +664,35 @@ namespace xenwinsvc
             }
             catch (Exception e)
             {
-                try
-                {
-                    // We are entitled to kill any transaction running
-                    // when we have the session lock
-                    session.InvokeMethod("AbortTransaction", null);
-                    session.InvokeMethod("StartTransaction", null);
-                }
-                catch
-                {
-                    System.Threading.Monitor.Exit(session);
-                    throw e;
-                }
+
+                // We are entitled to kill any transaction running
+                // when we have the session lock
+                session.InvokeMethod("AbortTransaction", null);
+                session.InvokeMethod("StartTransaction", null);
+
             }
         }
 
         public override void CommitTransaction()
         {
-            try
-            {
-                session.InvokeMethod("CommitTransaction", null);
-            }
-            finally
-            {
-                System.Threading.Monitor.Exit(session);
-            }
+
+            session.InvokeMethod("CommitTransaction", null);
+
+            System.Threading.Monitor.Exit(session);
+
         }
 
         public override void AbortTransaction()
         {
-            try 
-            {
-                session.InvokeMethod("AbortTransaction", null);
-            }
-            finally
-            {
-                System.Threading.Monitor.Exit(session);
-            }
+
+            session.InvokeMethod("AbortTransaction", null);
+
+            System.Threading.Monitor.Exit(session);
+
         }
 
-        public void AddWatch(string pathname) {
+        public void AddWatch(string pathname)
+        {
 
             ManagementBaseObject inparam = session.GetMethodParameters("SetWatch");
             inparam["PathName"] = pathname;
@@ -741,22 +717,21 @@ namespace xenwinsvc
             // First check to see if a "XCP-ng Xen Service" session exists.  If
             // so, we use that
             // Otherwise we have to create a new session from scratch
-            try
+
+            ObjectQuery obq = new ObjectQuery(String.Format("SELECT * from XCPngXenStoreSession WHERE Id=\"XCP-ng Xen Service: {0}\"", sessionqualifier));
+            ManagementObjectSearcher mobs = new ManagementObjectSearcher(wmibase.Scope, obq);
+            session = WmiBase.getFirst(mobs.Get());
+            if (session != null)
             {
-                ObjectQuery obq = new ObjectQuery(String.Format("SELECT * from XCPngXenStoreSession WHERE Id=\"XCP-ng Xen Service: {0}\"", sessionqualifier));
-                ManagementObjectSearcher mobs = new ManagementObjectSearcher(wmibase.Scope, obq); ;
-                session = WmiBase.getFirst(mobs.Get());
                 session.InvokeMethod("EndSession", null);
             }
-            catch
-            {
-            }
+
             ManagementBaseObject inparam = wmibase.XenBase.GetMethodParameters("AddSession");
             inparam["ID"] = String.Format("XCP-ng Xen Service: {0}", sessionqualifier);
             ManagementBaseObject outparam = wmibase.XenBase.InvokeMethod("AddSession", inparam, null);
             UInt32 sessionid = (UInt32)outparam["SessionId"];
             ObjectQuery query = new ObjectQuery("SELECT * from XCPngXenStoreSession WHERE SessionId=" + sessionid.ToString());
-            ManagementObjectSearcher objects = new ManagementObjectSearcher(wmibase.Scope, query); ;
+            ManagementObjectSearcher objects = new ManagementObjectSearcher(wmibase.Scope, query);
             session = WmiBase.getFirst(objects.Get());
         }
 
@@ -779,10 +754,9 @@ namespace xenwinsvc
 
         void Finish()
         {
-            try {
-                session.InvokeMethod("EndSession", null);
-            }
-            catch{}
+
+            session.InvokeMethod("EndSession", null);
+
 
         }
 
@@ -792,20 +766,19 @@ namespace xenwinsvc
             foreach (string line in (name + " : " + message).Split('\n'))
             {
                 Debug.Print(line + "\n");
-                try
+
+                if (session != null)
                 {
                     ManagementBaseObject inparam = session.GetMethodParameters("Log");
                     inparam["Message"] = line;
                     ManagementBaseObject outparam = session.InvokeMethod("Log", inparam, null);
                 }
-                catch { 
-                }
             }
-  
+
         }
 
         internal void RemoveValue(string pathname)
-        {   
+        {
             ManagementBaseObject inparam = session.GetMethodParameters("RemoveValue");
             inparam["PathName"] = pathname;
             ManagementBaseObject outparam = session.InvokeMethod("RemoveValue", inparam, null);
@@ -813,34 +786,40 @@ namespace xenwinsvc
         }
 
 
-        private string getFirstChild(string pathname) {
+        private string getFirstChild(string pathname)
+        {
             ManagementBaseObject inparam;
             ManagementBaseObject outparam;
             inparam = session.GetMethodParameters("GetFirstChild");
             inparam["InPath"] = pathname;
             outparam = session.InvokeMethod("GetFirstChild", inparam, null);
-            if (outparam==null || outparam["OutPath"] == null) {
+            if (outparam == null || outparam["OutPath"] == null)
+            {
                 return "";
             }
             return (string)outparam["OutPath"];
         }
-        private string getNextSibling(string pathname) {
+        private string getNextSibling(string pathname)
+        {
             ManagementBaseObject inparam;
             ManagementBaseObject outparam;
             inparam = session.GetMethodParameters("GetNextSibling");
             inparam["InPath"] = pathname;
             outparam = session.InvokeMethod("GetNextSibling", inparam, null);
-            if (outparam==null || outparam["OutPath"] == null) {
+            if (outparam == null || outparam["OutPath"] == null)
+            {
                 return "";
             }
             return (string)outparam["OutPath"];
 
         }
 
-        private string[] getChildrenManually(string pathname) {
+        private string[] getChildrenManually(string pathname)
+        {
             List<string> outlist = new List<string>();
             string next = getFirstChild(pathname);
-            while (! next.Equals("")) {
+            while (!next.Equals(""))
+            {
                 outlist.Add(next);
                 next = getNextSibling(next);
             }
@@ -855,14 +834,10 @@ namespace xenwinsvc
 
             inparam = session.GetMethodParameters("GetChildren");
             inparam["PathName"] = pathname;
-            try {
+
             outparam = session.InvokeMethod("GetChildren", inparam, null);
-            }
-            catch {
-                /*GetChildren fails on windows vists sp0, so we have a backup*/
-                return getChildrenManually(pathname);
-            }
-            if (outparam==null)
+
+            if (outparam == null)
                 return new string[0];
             cnode = (ManagementBaseObject)outparam["children"];
             return (String[])cnode["ChildNodes"];
@@ -877,7 +852,12 @@ namespace xenwinsvc
 
             ManagementBaseObject outparam = session.InvokeMethod("GetValue", inparam, null);
 
-            return (String)outparam["value"];
+            if (outparam != null)
+            {
+                return (String)outparam["value"];
+            }
+
+            return "";
         }
         internal void SetValue(string pathname, string value)
         {
@@ -917,7 +897,7 @@ namespace xenwinsvc
     {
         string pathname;
         WmiSession session;
-        public WmiWatchListener(WmiSession session, ManagementEventWatcher ev, string pathname) : base( ev)
+        public WmiWatchListener(WmiSession session, ManagementEventWatcher ev, string pathname) : base(ev)
         {
             this.pathname = pathname;
             this.session = session;
@@ -926,12 +906,9 @@ namespace xenwinsvc
         override protected void Finish()
         {
             base.Finish();
-            try {
-                session.RemoveWatch(pathname);
-            }
-            catch {
-                // Ignore, we've lost WMI connection
-            }
+
+            session.RemoveWatch(pathname);
+
         }
     }
 
@@ -944,18 +921,17 @@ namespace xenwinsvc
         public WmiListener(ManagementEventWatcher ev)
         {
             this.ev = ev;
-        
+
             ev.Start();
-            
+
         }
         protected virtual void Finish()
         {
-            try {
-                ev.Stop();
-                ev.Dispose();
-            }
-            catch{}
-            
+
+            ev.Stop();
+            ev.Dispose();
+
+
         }
 
         bool disposed = false;
